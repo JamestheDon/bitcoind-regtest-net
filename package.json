@@ -1,0 +1,25 @@
+{
+  "name": "bitcoind-regtest-net",
+  "version": "0.1.0",
+  "description": "Create n bitcoind nodes on the regression network (regtest).",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JamestheDon/bitcoind-regtest-net.git"
+  },
+  "keywords": [
+    "bitcoind",
+    "regtest",
+    "network"
+  ],
+  "author": "James Hawkins",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/JamestheDon/bitcoind-regtest-net/issues"
+  },
+  "homepage": "https://github.com/JamestheDon/bitcoind-regtest-net#readme"
+}
