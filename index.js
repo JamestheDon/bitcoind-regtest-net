@@ -1,4 +1,4 @@
-import fs, { stat } from "fs";
+import { stat, writeFile, mkdir } from "fs";
 import { homedir, platform } from "os";
 import { spawn, exec } from "child_process";
 
@@ -43,7 +43,7 @@ for (let i = paths.length; i--; ) {
     if (stats) {
       console.log("Directories ready:", true);
     } else {
-      fs.mkdir(paths[i], { recursive: true }, (err) => {
+      mkdir(paths[i], { recursive: true }, (err) => {
         if (err) {
           console.log("errrrr", err);
         }
@@ -87,7 +87,7 @@ for (let i = ports.length; i--; ) {
         port=${port}
     
         `;
-  fs.writeFile(
+  writeFile(
     `${home}/Library/Application Support/Bitcoin/${pkgName}/node${i}/bitcoin.conf`,
     conf,
     (err) => {
@@ -138,7 +138,7 @@ if (nodesReady.length > 0) {
      
           start.stdout.on("data", (data) => {
             console.log(`node ready:${nodesReady[i].key}`,data.toString());
-           // const pid 
+           //  const pid 
           });
       
           start.stdout.on("close", (data) => {
