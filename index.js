@@ -14,25 +14,38 @@ import { spawn, exec } from "child_process";
 // delete old nodes, how to keep clean/manage nodes?
 const nodes = 3; // How many node to be created.
 const pkgName = "ledgerd"; // Directory to build network in.
-const name = "Node";
 const ip = "127.0.0.1:";
-const linux = "/user/home/.bitcoin";
+const linux = "/.bitcoin/";
 const windows = "UsersYourUserNameAppdataRoamingBitcoin"; // (Vista and 7)
 const mac = "/Library/Application Support/Bitcoin/";
-const env = platform;
-const home = homedir;
+const env = platform();
+const home = homedir();
 const paths = [];
-const ports = []; 
-const startPort = [8333];// startPort 8333 is where the port generation starts from.
+const ports = [];
+const startPort = [8333]; // startPort 8333 is where the port generation starts from.
 
 // Add os check to determine where data should be stored.
+const init = (env, home) => {
+  if (env === "linux") {
+    const url = home + linux;
+    return url;
+  }
+
+  if (env === "darwin") {
+    const url = home + mac;
+    return url;
+  }
+};
+
+// Determine database location
+const db = init(env, home);
 
 for (let i = nodes; i--; ) {
   // Generate paths
-  const url = home + mac + pkgName + "/node" + i + "/";
+  const url = db + pkgName + "/node" + i + "/";
   paths.push(url);
-  // Sequential port generation. 
-  const port = startPort[0]++; // 8333++ 
+  // Sequential port generation.
+  const port = startPort[0]++; // 8333++
   ports.push({ port: port + nodes, rpc: port });
 }
 
@@ -59,7 +72,7 @@ if (ports.length && paths.length > 0) {
 
 //       **Important in production code:**
 // todo: need auth handeling: ./auth.js
-// todo: Update bitcoind auth settings to latest standard: rpcauth=user:passwordhash       
+// todo: Update bitcoind auth settings to latest standard: rpcauth=user:passwordhash
 //       to use "rpcauth=" in regtest with multipule nodes requires unique hashes for each node.
 // const rpcauth = {
 //   user: "jamesdon",
@@ -75,17 +88,17 @@ for (let i = ports.length; i--; ) {
   const rpc = ports[i].rpc;
 // using unsecure auth settings "rpcuser" and "rpcpassword"
   const conf = `
-        regtest=1 
-        debug=rpc 
-        server=1 
+        regtest=1
+        debug=rpc
+        server=1
         rpcuser=jamesdon
         rpcpassword=thisisnotapassword
-        datadir=${home}/Library/Application Support/Bitcoin/${pkgName}/node${i}/ 
+        datadir=${home}/Library/Application Support/Bitcoin/${pkgName}/node${i}/
         [regtest]
         bind=127.0.0.1:${port}
-        rpcport=${rpc} 
+        rpcport=${rpc}
         port=${port}
-    
+
         `;
   writeFile(
     `${home}/Library/Application Support/Bitcoin/${pkgName}/node${i}/bitcoin.conf`,
@@ -99,9 +112,9 @@ for (let i = ports.length; i--; ) {
 
 // Node env is set at this point.
 /**
- * 
- * 
- * 
+ *
+ *
+ *
  */
 // Time to run the start bitcoind cmd.
 
@@ -135,29 +148,23 @@ if (nodesReady.length > 0) {
               console.log('errror:', data.toString())
           })
 
-     
           start.stdout.on("data", (data) => {
             console.log(`node ready:${nodesReady[i].key}`,data.toString());
-           //  const pid 
+           //  const pid
           });
-      
+
           start.stdout.on("close", (data) => {
-       
+
             console.log("Node started, closing processes. ", data);
           });
     }
-    
-   
-  
-   
-
 
 }
 
-// using setTimeout to "hang" the process allowing for time 
+// using setTimeout to "hang" the process allowing for time
 // to "SIGINT" signal interupt which triggers node stop command.
 setTimeout(() => {
-    
+
 }, 20000  )
 
 // if the need to abort arisies use "control + c". (mac)
@@ -176,7 +183,7 @@ console.log('stop commands here:',bitcoinStop )
     }
     if (stdout) {
       console.log(stdout, nodesReady[i].key);
-     
+
     }
   });
 }
