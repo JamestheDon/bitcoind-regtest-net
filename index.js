@@ -24,7 +24,7 @@ const paths = [];
 const ports = [];
 const startPort = [8333]; // startPort 8333 is where the port generation starts from.
 
-// Add os check to determine where data should be stored.
+// Add os check to determine where data directories should be created.
 const init = (env, home) => {
   if (env === "linux") {
     const url = home + linux;
@@ -93,7 +93,7 @@ for (let i = ports.length; i--; ) {
         server=1
         rpcuser=jamesdon
         rpcpassword=thisisnotapassword
-        datadir=${home}/Library/Application Support/Bitcoin/${pkgName}/node${i}/
+        datadir=${db}${pkgName}/node${i}/
         [regtest]
         bind=127.0.0.1:${port}
         rpcport=${rpc}
@@ -101,7 +101,7 @@ for (let i = ports.length; i--; ) {
 
         `;
   writeFile(
-    `${home}/Library/Application Support/Bitcoin/${pkgName}/node${i}/bitcoin.conf`,
+    `${db}${pkgName}/node${i}/bitcoin.conf`,
     conf,
     (err) => {
       if (err) console.log(err);
@@ -140,7 +140,7 @@ if (nodesReady.length > 0) {
         const start = spawn(
             "bitcoind",
             [
-              '-daemon',"-conf=" +home +"/Library/Application Support/Bitcoin/" + pkgName +"/node" + nodesReady[i].key + "/bitcoin.conf",
+              '-daemon',"-conf=" + db + pkgName +"/node" + nodesReady[i].key + "/bitcoin.conf",
             ],
             { encoding: "utf-8", stdio: "pipe" }
           );
@@ -172,18 +172,20 @@ process.on("SIGINT", () => {
   console.log("\nInterupting process.");
 // Stop bitcoind
 for (let i = nodesReady.length; i--;) {
-    const bitcoinStop = `bitcoin-cli -rpcport=${nodesReady[i].ports.rpc}  -datadir="${home}/Library/Application Support/Bitcoin/${pkgName}/node${nodesReady[i].key}" stop`;
+    const bitcoinStop = `bitcoin-cli -rpcport=${nodesReady[i].ports.rpc}  -datadir="${db}${pkgName}/node${nodesReady[i].key}" stop`;
 console.log('stop commands here:',bitcoinStop )
   exec(bitcoinStop, (error, stdout, stderr) => {
     if (error) {
       console.log("error", error)
+      process.exit(0)
     }
     if (stderr) {
       console.log("stderr", stderr)
+        process.exit(0)
     }
     if (stdout) {
       console.log(stdout, nodesReady[i].key);
-
+        process.exit(0)
     }
   });
 }
