@@ -119,7 +119,7 @@ for (let i = paths.length; i--; ) {
     ports: ports[i],
     paths: paths[i],
     running: false,
-    wallet: ''
+    wallet: "",
   };
 
   nodesReady.push(node);
@@ -153,7 +153,6 @@ if (nodesReady.length > 0) {
   }
 }
 
-
 // using setTimeout to "hang" the process allowing for time for start up.
 setTimeout(() => {
   nodeController(nodesReady);
@@ -163,60 +162,116 @@ setTimeout(() => {
  *
  * @todo add switch statement to handle node selection and command.
  */
- const createWallet = 'bitcoin-cli -regtest -rpcport=8333 -datadir="/Users/turtle/Library/Application Support/Bitcoin/regtestnet/node0" createwallet testwallet';
 
 const nodeController = (nodesReady) => {
   console.log(nodesReady);
   process.stdout.write(
-    `what node number do you want to use? 0-${+nodesReady.length}`
+    "Create a wallet? : 1 \n Load Wallet. : 2\n Add new addresses? : 3\n Exit program. : 4\n "
   );
   process.stdin.resume();
   process.stdin.setEncoding("utf-8");
 
   let buffer = "";
   process.stdin.on("data", (data) => {
-    buffer += data.trim();
+    buffer = data.trim();
     switch (buffer) {
-        case '1':
-          for (let i = nodesReady.length; i--; ) {
-              const start = spawn(
-                "bitcoin-cli",
-                [
-                  "-regtest",
-                  `-rpcport=${nodesReady[i].ports.rpc}`,
-                  "-datadir=" + db + pkgName + "/node" + nodesReady[i].key,
-                  "createwallet",
-                  "testwallet"
-                ],
-                { encoding: "utf-8", stdio: "pipe" }
-              );
-              start.stderr.on("data", (data) => {
-                console.log("errror:", data.toString());
-                
-              });
-          
-              start.stdout.on("data", (data) => {
-                //  console.log(`node ready:${nodesReady[i].key}`,data.toString());
-                if (data) {
-                  nodesReady[i].wallet = "testwallet";
-                }
-              });
-          
-              start.on("close", (data) => {
-                console.log("Node started, closing processes. ", data);
-                console.log("node started:", nodesReady[i].running);
-              });
-              
-          }
-          break;
-          case '2': 
-            process.exit(0)
-        
-        default: 
-            console.log("invalid option.")
+      case "1":
+        for (let i = nodesReady.length; i--; ) {
+          const start = spawn(
+            "bitcoin-cli",
+            [
+              "-regtest",
+              `-rpcport=${nodesReady[i].ports.rpc}`,
+              "-datadir=" + db + pkgName + "/node" + nodesReady[i].key,
+              "createwallet",
+              "testwallet",
+            ],
+            { encoding: "utf-8", stdio: "pipe" }
+          );
+          start.stderr.on("data", (data) => {
+            console.log("errror:", data.toString());
+          });
+
+          start.stdout.on("data", (data) => {
+            //  console.log(`node ready:${nodesReady[i].key}`,data.toString());
+            if (data) {
+              nodesReady[i].wallet = "testwallet";
+            }
+          });
+
+          start.on("close", (data) => {
+            console.log("Node started, closing processes. ", data);
+            console.log("node started:", nodesReady[i].running);
+          });
+        }
+      case "2":
+        for (let i = nodesReady.length; i--; ) {
+          const start = spawn(
+            "bitcoin-cli",
+            [
+              "-regtest",
+              `-rpcport=${nodesReady[i].ports.rpc}`,
+              "-datadir=" + db + pkgName + "/node" + nodesReady[i].key,
+              "loadwallet",
+              "testwallet",
+            ],
+            { encoding: "utf-8", stdio: "pipe" }
+          );
+          start.stderr.on("data", (data) => {
+            console.log("Load wallet error:", data.toString());
+          });
+
+          start.stdout.on("data", (data) => {
+            if (data) {
+              console.log("Wallet loaded:", data.toString());
+            }
+          });
+
+          start.on("close", (data) => {
+            console.log("Node started, closing processes. ", data);
+            console.log("node started:", nodesReady[i].running);
+          });
+        }
+
+        break;
+
+      case "3":
+        for (let i = nodesReady.length; i--; ) {
+          const start = spawn(
+            "bitcoin-cli",
+            [
+              "-regtest",
+              `-rpcport=${nodesReady[i].ports.rpc}`,
+              "-datadir=" + db + pkgName + "/node" + nodesReady[i].key,
+              "getnewaddress",
+            ],
+            { encoding: "utf-8", stdio: "pipe" }
+          );
+          start.stderr.on("data", (data) => {
+            console.log("Gen new address error:", data.toString());
+          });
+
+          start.stdout.on("data", (data) => {
+            if (data) {
+              console.log("Address ready:", data.toString());
+            }
+          });
+
+          start.on("close", (data) => {
+            console.log("Node started, closing processes. ", data);
+            console.log("node started:", nodesReady[i].running);
+          });
+        }
+
+        break;
+      case "4":
+        console.log("Closing program...");
+        process.exit(0);
+
+      default:
+        console.log("invalid option.");
     }
   });
-
 };
 
 // "SIGINT" signal interupt which triggers node stop command.
@@ -238,7 +293,7 @@ process.on("SIGINT", () => {
       }
       if (stdout) {
         console.log(stdout, nodesReady[i].key);
-        nodesReady[i].running = false
+        nodesReady[i].running = false;
         process.exit(0);
       }
     });

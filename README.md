@@ -7,6 +7,7 @@ Create n nodes on the Bitcoin Core regtest network.
 ```
  - Change nodes const in index.js to your desired node number. 
 
+
  ## Todo
 - [x] Create wallets.
 - Generate new addresses.
