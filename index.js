@@ -24,18 +24,16 @@ const paths = [];
 const ports = [];
 const startPort = [8333]; // startPort 8333 is where the port generation starts from.
 
-
-
 // Add os check to determine where data directories should be created.
 const init = (env, home) => {
   if (env === "linux") {
-    console.log(env)
+    console.log(env);
     const url = home + linux;
     return url;
   }
 
   if (env === "darwin") {
-      console.log(env)
+    console.log(env);
     const url = home + mac;
     return url;
   }
@@ -111,15 +109,7 @@ for (let i = ports.length; i--; ) {
 }
 
 // Node env is set at this point.
-/**
- *
- *
- *
- */
-// Time to run the start bitcoind cmd.
-
 const nodesReady = [];
-
 for (let i = paths.length; i--; ) {
   // Build a "ready to run" node Object.
   const nodeName = paths[i].slice(58, 63);
@@ -128,71 +118,130 @@ for (let i = paths.length; i--; ) {
     key: nodeName.slice(4, 5),
     ports: ports[i],
     paths: paths[i],
-    running: false
+    running: false,
+    wallet: ''
   };
 
   nodesReady.push(node);
 }
+// Time to run the start bitcoind.
+if (nodesReady.length > 0) {
+  for (let i = nodesReady.length; i--; ) {
+    const start = spawn(
+      "bitcoind",
+      [
+        "-daemon",
+        "-conf=" + db + pkgName + "/node" + nodesReady[i].key + "/bitcoin.conf",
+      ],
+      { encoding: "utf-8", stdio: "pipe" }
+    );
+    start.stderr.on("data", (data) => {
+      console.log("errror:", data.toString());
+    });
 
+    start.stdout.on("data", (data) => {
+      //  console.log(`node ready:${nodesReady[i].key}`,data.toString());
+      if (data) {
+        nodesReady[i].running = true;
+      }
+    });
 
+    start.on("close", (data) => {
+      console.log("Node started, closing processes. ", data);
+      console.log("node started:", nodesReady[i].running);
+    });
+  }
+}
 
-        
-        if (nodesReady.length > 0) {
-          for (let i = nodesReady.length; i--; ) {
-            nodesReady[i].running = true
-            const start = spawn(
-              "bitcoind",
-              [
-                "-daemon",
-                "-conf=" + db + pkgName + "/node" + nodesReady[i].key + "/bitcoin.conf",
-              ],
-              { encoding: "utf-8", stdio: "pipe" }
-            );
-            start.stderr.on("data", (data) => {
-              console.log("errror:", data.toString());
-            });
-        
-            start.stdout.on("data", (data) => {
-              //  console.log(`node ready:${nodesReady[i].key}`,data.toString());
-             
-            });
-        
-            start.on("close", (data) => {
-              console.log("Node started, closing processes. ", data);
-              console.log("node started:", nodesReady[i].running);
-            });
-          }
-         
-          
-         
-        }
+const createWallet = 'bitcoin-cli -regtest -rpcport=8333 -datadir="/Users/turtle/Library/Application Support/Bitcoin/regtestnet/node0" createwallet testwallet';
+
+// write node details to file?
+// if (nodesReady.running === true) {
+//     for (let i = nodesReady.length; i--; ) {
+//         const start = spawn(
+//           "bitcoin-cli",
+//           [
+//             "-regtest",
+//             `-rpcport=${nodesReady[i].ports.rpc}`,
+//             "-datadir" + db + pkgName + "/node" + nodesReady[i].key,
+//             "createwallet",
+//             "testwallet"
+//           ],
+//           { encoding: "utf-8", stdio: "pipe" }
+//         );
+//         start.stderr.on("data", (data) => {
+//           console.log("errror:", data.toString());
+//         });
+    
+//         start.stdout.on("data", (data) => {
+//           //  console.log(`node ready:${nodesReady[i].key}`,data.toString());
+//           if (data) {
+//             nodesReady[i].wallet = "testwallet";
+//           }
+//         });
+    
+//         start.on("close", (data) => {
+//           console.log("Node started, closing processes. ", data);
+//           console.log("node started:", nodesReady[i].running);
+//         });
+//       }
+// }
+
 
 // using setTimeout to "hang" the process allowing for time for start up.
 setTimeout(() => {
-    nodeController(nodesReady)
-}, 5000  )
+  nodeController(nodesReady);
+}, 5000);
 /**
- * 
+ *
  * @todo add switch statement to handle node selection and command.
  */
 const nodeController = (nodesReady) => {
-    process.stdout.write(`what node number do you want to use? 0-${+ nodesReady.length}` )
-    process.stdin.resume()
-    process.stdin.setEncoding('utf-8')
+  console.log(nodesReady);
+  process.stdout.write(
+    `what node number do you want to use? 0-${+nodesReady.length}`
+  );
+  process.stdin.resume();
+  process.stdin.setEncoding("utf-8");
 
-    let buffer = '';
-    process.stdin.on('data', (data) => {
-        buffer += data.trim()
+  let buffer = "";
+  process.stdin.on("data", (data) => {
+    buffer += data.trim();
+    switch (buffer) {
+        case '1':
+          for (let i = nodesReady.length; i--; ) {
+              const start = spawn(
+                "bitcoin-cli",
+                [
+                  "-regtest",
+                  `-rpcport=${nodesReady[i].ports.rpc}`,
+                  "-datadir" + db + pkgName + "/node" + nodesReady[i].key,
+                  "createwallet",
+                  "testwallet"
+                ],
+                { encoding: "utf-8", stdio: "pipe" }
+              );
+              start.stderr.on("data", (data) => {
+                console.log("errror:", data.toString());
+              });
+          
+              start.stdout.on("data", (data) => {
+                //  console.log(`node ready:${nodesReady[i].key}`,data.toString());
+                if (data) {
+                  nodesReady[i].wallet = "testwallet";
+                }
+              });
+          
+              start.on("close", (data) => {
+                console.log("Node started, closing processes. ", data);
+                console.log("node started:", nodesReady[i].running);
+              });
+              break;
+          }
+    }
+  });
 
-        //   process.stdin.pause() // when to exit or pause?
-                    })
-        //    for (let i = nodesReady.length; i--;) {
-        //        if (nodesReady[i] == buffer) {
-
-        //        }
-        // \   }
-
-}
+};
 
 // "SIGINT" signal interupt which triggers node stop command.
 // if the need to abort arisies use "control + c". (mac)
@@ -213,6 +262,7 @@ process.on("SIGINT", () => {
       }
       if (stdout) {
         console.log(stdout, nodesReady[i].key);
+        nodesReady[i].running = false
         process.exit(0);
       }
     });
