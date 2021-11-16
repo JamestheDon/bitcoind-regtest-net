@@ -153,49 +153,18 @@ if (nodesReady.length > 0) {
   }
 }
 
-const createWallet = 'bitcoin-cli -regtest -rpcport=8333 -datadir="/Users/turtle/Library/Application Support/Bitcoin/regtestnet/node0" createwallet testwallet';
-
-// write node details to file?
-// if (nodesReady.running === true) {
-//     for (let i = nodesReady.length; i--; ) {
-//         const start = spawn(
-//           "bitcoin-cli",
-//           [
-//             "-regtest",
-//             `-rpcport=${nodesReady[i].ports.rpc}`,
-//             "-datadir" + db + pkgName + "/node" + nodesReady[i].key,
-//             "createwallet",
-//             "testwallet"
-//           ],
-//           { encoding: "utf-8", stdio: "pipe" }
-//         );
-//         start.stderr.on("data", (data) => {
-//           console.log("errror:", data.toString());
-//         });
-    
-//         start.stdout.on("data", (data) => {
-//           //  console.log(`node ready:${nodesReady[i].key}`,data.toString());
-//           if (data) {
-//             nodesReady[i].wallet = "testwallet";
-//           }
-//         });
-    
-//         start.on("close", (data) => {
-//           console.log("Node started, closing processes. ", data);
-//           console.log("node started:", nodesReady[i].running);
-//         });
-//       }
-// }
-
 
 // using setTimeout to "hang" the process allowing for time for start up.
 setTimeout(() => {
   nodeController(nodesReady);
 }, 5000);
+
 /**
  *
  * @todo add switch statement to handle node selection and command.
  */
+ const createWallet = 'bitcoin-cli -regtest -rpcport=8333 -datadir="/Users/turtle/Library/Application Support/Bitcoin/regtestnet/node0" createwallet testwallet';
+
 const nodeController = (nodesReady) => {
   console.log(nodesReady);
   process.stdout.write(
@@ -215,7 +184,7 @@ const nodeController = (nodesReady) => {
                 [
                   "-regtest",
                   `-rpcport=${nodesReady[i].ports.rpc}`,
-                  "-datadir" + db + pkgName + "/node" + nodesReady[i].key,
+                  "-datadir=" + db + pkgName + "/node" + nodesReady[i].key,
                   "createwallet",
                   "testwallet"
                 ],
@@ -223,6 +192,7 @@ const nodeController = (nodesReady) => {
               );
               start.stderr.on("data", (data) => {
                 console.log("errror:", data.toString());
+                
               });
           
               start.stdout.on("data", (data) => {
@@ -236,8 +206,14 @@ const nodeController = (nodesReady) => {
                 console.log("Node started, closing processes. ", data);
                 console.log("node started:", nodesReady[i].running);
               });
-              break;
+              
           }
+          break;
+          case '2': 
+            process.exit(0)
+        
+        default: 
+            console.log("invalid option.")
     }
   });
 
