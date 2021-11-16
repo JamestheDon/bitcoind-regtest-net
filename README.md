@@ -10,5 +10,8 @@ Create n nodes on the Bitcoin Core regtest network.
 
  ## Todo
 - [x] Create wallets.
-- Generate new addresses.
-- Generate Lightning network regtest nodes.
+- [x] Load wallets.
+- [x] Generate new addresses.
+- []  Generate coins to addresses.
+- []  Make transactions between nodes. 
+- []  Generate Lightning network regtest nodes.
