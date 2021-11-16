@@ -119,7 +119,9 @@ for (let i = paths.length; i--; ) {
     ports: ports[i],
     paths: paths[i],
     running: false,
-    wallet: "",
+    wallets: [],
+    addresses: [],
+    account: [],
   };
 
   nodesReady.push(node);
@@ -160,13 +162,14 @@ setTimeout(() => {
 
 /**
  *
- * @todo add switch statement to handle node selection and command.
+ * @spec
+ *
  */
 
 const nodeController = (nodesReady) => {
   console.log(nodesReady);
   process.stdout.write(
-    "Create a wallet? : 1 \n Load Wallet. : 2\n Add new addresses? : 3\n Exit program. : 4\n "
+    "Create a wallet? : 1 \n Load Wallet. : 2\n Add new addresses? : 3\n Get account details. : 4\n Exit program. : 5 "
   );
   process.stdin.resume();
   process.stdin.setEncoding("utf-8");
@@ -195,7 +198,8 @@ const nodeController = (nodesReady) => {
           start.stdout.on("data", (data) => {
             //  console.log(`node ready:${nodesReady[i].key}`,data.toString());
             if (data) {
-              nodesReady[i].wallet = "testwallet";
+              //   nodesReady[i].wallet = "testwallet";
+              nodesReady[i].wallets.push(data);
             }
           });
 
@@ -219,11 +223,21 @@ const nodeController = (nodesReady) => {
           );
           start.stderr.on("data", (data) => {
             console.log("Load wallet error:", data.toString());
+            if (data.error) {
+              console.log('got the code here:', data.error)
+            }
           });
 
           start.stdout.on("data", (data) => {
             if (data) {
-              console.log("Wallet loaded:", data.toString());
+              const wallet = {
+                name: "testwallet",
+                node: nodesReady[i].name,
+                warning: "",
+                loaded: true,
+              };
+              nodesReady[i].wallets.push(wallet);
+              console.log("Wallet loaded:", wallet);
             }
           });
 
@@ -253,7 +267,13 @@ const nodeController = (nodesReady) => {
 
           start.stdout.on("data", (data) => {
             if (data) {
-              console.log("Address ready:", data.toString());
+              const address = {
+                key: nodesReady[i].key,
+                node: nodesReady[i].name,
+                address: data,
+              };
+              console.log("Address ready:", address);
+              nodesReady[i].address.push(address);
             }
           });
 
@@ -265,7 +285,43 @@ const nodeController = (nodesReady) => {
 
         break;
       case "4":
-        console.log("Closing program...");
+        for (let i = nodesReady.length; i--; ) {
+          const start = spawn(
+            "bitcoin-cli",
+            [
+              "-regtest",
+              `-rpcport=${nodesReady[i].ports.rpc}`,
+              "-datadir=" + db + pkgName + "/node" + nodesReady[i].key,
+              "getaccount",
+            ],
+            { encoding: "utf-8", stdio: "pipe" }
+          );
+          start.stderr.on("data", (data) => {
+            console.log("Get account details error:", data.toString());
+          });
+
+          start.stdout.on("data", (data) => {
+            if (data) {
+              const address = {
+                key: nodesReady[i].key,
+                node: nodesReady[i].name,
+                address: data,
+              };
+              console.log("Address ready:", address);
+              nodesReady[i].address.push(address);
+            }
+          });
+
+          start.on("close", (data) => {
+            console.log("Node started, closing processes. ", data);
+            console.log("node started:", nodesReady[i].running);
+          });
+        }
+
+        
+        break;
+      case "5":
+        console.log("Closing cli, bitcoind daemon still alive...");
         process.exit(0);
 
       default:
