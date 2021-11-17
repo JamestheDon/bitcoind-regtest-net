@@ -1,7 +1,7 @@
 import { stat, writeFile, mkdir } from "fs";
 import { homedir, platform } from "os";
 import { spawn, exec } from "child_process";
-
+import {start} from "./rpc/commands.js"
 /**
  *
  * @SPEC create multipule instances of a regtest node.
@@ -13,10 +13,10 @@ import { spawn, exec } from "child_process";
 // ttl on node dirs. how to set?
 // delete old nodes, how to keep clean/manage nodes?
 const nodes = 3; // How many node to be created.
-const pkgName = "ledgerd"; // Directory to build network in.
+
 const ip = "127.0.0.1:";
 const linux = "/.bitcoin/";
-const windows = "UsersYourUserNameAppdataRoamingBitcoin"; // (Vista and 7)
+//const windows = "UsersYourUserNameAppdataRoamingBitcoin"; // (Vista and 7)
 const mac = "/Library/Application Support/Bitcoin/";
 const env = platform();
 const home = homedir();
@@ -26,15 +26,16 @@ const startPort = [8333]; // startPort 8333 is where the port generation starts 
 
 // Add os check to determine where data directories should be created.
 const init = (env, home) => {
+  const pkgName = "ledgerd"; // Directory to build network in.
   if (env === "linux") {
     console.log(env);
-    const url = home + linux;
+    const url = home + linux + pkgName;
     return url;
   }
 
   if (env === "darwin") {
     console.log(env);
-    const url = home + mac;
+    const url = home + mac + pkgName;
     return url;
   }
 };
@@ -44,7 +45,7 @@ const db = init(env, home);
 
 for (let i = nodes; i--; ) {
   // Generate paths
-  const url = db + pkgName + "/node" + i + "/";
+  const url = db +  "/node" + i + "/";
   paths.push(url);
   // Sequential port generation.
   const port = startPort[0]++; // 8333++
@@ -95,14 +96,14 @@ for (let i = ports.length; i--; ) {
         server=1
         rpcuser=jamesdon
         rpcpassword=thisisnotapassword
-        datadir=${db}${pkgName}/node${i}/
+        datadir=${db}/node${i}/
         [regtest]
         bind=127.0.0.1:${port}
         rpcport=${rpc}
         port=${port}
 
         `;
-  writeFile(`${db}${pkgName}/node${i}/bitcoin.conf`, conf, (err) => {
+  writeFile(`${db}/node${i}/bitcoin.conf`, conf, (err) => {
     if (err) console.log(err);
     console.log("bitcoin.conf:", true);
   });
@@ -129,29 +130,37 @@ for (let i = paths.length; i--; ) {
 // Time to run the start bitcoind.
 if (nodesReady.length > 0) {
   for (let i = nodesReady.length; i--; ) {
-    const start = spawn(
-      "bitcoind",
-      [
-        "-daemon",
-        "-conf=" + db + pkgName + "/node" + nodesReady[i].key + "/bitcoin.conf",
-      ],
-      { encoding: "utf-8", stdio: "pipe" }
-    );
-    start.stderr.on("data", (data) => {
-      console.log("errror:", data.toString());
-    });
+    start(db, nodesReady[i], nodesReady[i].key )
+    /**
+     * @refactored ready to delete.
+     */
+    // const start = spawn(
+    //   "bitcoind",
+    //   [
+    //     "-daemon",
+    //     "-conf=" + db +  "/node" + nodesReady[i].key + "/bitcoin.conf",
+    //   ],
+    //   { encoding: "utf-8", stdio: "pipe" }
+    // );
+    // start.stderr.on("data", (data) => {
+    //   console.log("[bitcoind]", data.toString());
+    // });
 
-    start.stdout.on("data", (data) => {
-      //  console.log(`node ready:${nodesReady[i].key}`,data.toString());
-      if (data) {
-        nodesReady[i].running = true;
-      }
-    });
+    // start.stdout.on("data", (data) => {
+    //   //  console.log(`node ready:${nodesReady[i].key}`,data.toString());
+    //   if (data) {
+    //     nodesReady[i].running = true;
+    //   }
+    // });
 
-    start.on("close", (data) => {
-      console.log("Node started, closing processes. ", data);
-      console.log("node started:", nodesReady[i].running);
-    });
+    // start.on("close", (data) => {
+    //   if (data === 1) {
+    //     console.log("[bitcoind] Running", true);
+    //     nodesReady[i].running = true;
+    //   }
+     
+    //   console.log("node started:", nodesReady[i].running);
+    // });
   }
 }
 
@@ -185,7 +194,7 @@ const nodeController = (nodesReady) => {
             [
               "-regtest",
               `-rpcport=${nodesReady[i].ports.rpc}`,
-              "-datadir=" + db + pkgName + "/node" + nodesReady[i].key,
+              "-datadir=" + db + "/node" + nodesReady[i].key,
               "createwallet",
               "testwallet",
             ],
@@ -215,7 +224,7 @@ const nodeController = (nodesReady) => {
             [
               "-regtest",
               `-rpcport=${nodesReady[i].ports.rpc}`,
-              "-datadir=" + db + pkgName + "/node" + nodesReady[i].key,
+              "-datadir=" + db +  "/node" + nodesReady[i].key,
               "loadwallet",
               "testwallet",
             ],
@@ -223,9 +232,7 @@ const nodeController = (nodesReady) => {
           );
           start.stderr.on("data", (data) => {
             console.log("Load wallet error:", data.toString());
-            if (data.error) {
-              console.log('got the code here:', data.error)
-            }
+          
           });
 
           start.stdout.on("data", (data) => {
@@ -242,8 +249,13 @@ const nodeController = (nodesReady) => {
           });
 
           start.on("close", (data) => {
-            console.log("Node started, closing processes. ", data);
-            console.log("node started:", nodesReady[i].running);
+            if (data === 35) {
+              nodesReady[i].wallets.push(wallet);
+              console.log("Wallet loaded:", true);
+              
+            }
+           
+            console.log("Wallet loaded:", nodesReady[i].running);
           });
         }
 
@@ -256,8 +268,8 @@ const nodeController = (nodesReady) => {
             [
               "-regtest",
               `-rpcport=${nodesReady[i].ports.rpc}`,
-              "-datadir=" + db + pkgName + "/node" + nodesReady[i].key,
-              "getnewaddress",
+              "-datadir=" + db +  "/node" + nodesReady[i].key,
+              "getnewaddress", // add address type.
             ],
             { encoding: "utf-8", stdio: "pipe" }
           );
@@ -291,7 +303,7 @@ const nodeController = (nodesReady) => {
             [
               "-regtest",
               `-rpcport=${nodesReady[i].ports.rpc}`,
-              "-datadir=" + db + pkgName + "/node" + nodesReady[i].key,
+              "-datadir=" + db +  "/node" + nodesReady[i].key,
               "getaccount",
             ],
             { encoding: "utf-8", stdio: "pipe" }
@@ -323,6 +335,9 @@ const nodeController = (nodesReady) => {
       case "5":
         console.log("Closing cli, bitcoind daemon still alive...");
         process.exit(0);
+      case "6":
+          console.log("Nodes ready:", nodesReady);
+        break;
 
       default:
         console.log("invalid option.");
@@ -336,7 +351,7 @@ process.on("SIGINT", () => {
   console.log("\nInterupting process.");
   // Stop bitcoind
   for (let i = nodesReady.length; i--; ) {
-    const bitcoinStop = `bitcoin-cli -rpcport=${nodesReady[i].ports.rpc}  -datadir="${db}${pkgName}/node${nodesReady[i].key}" stop`;
+    const bitcoinStop = `bitcoin-cli -rpcport=${nodesReady[i].ports.rpc}  -datadir="${db}/node${nodesReady[i].key}" stop`;
     console.log("stop commands here:", bitcoinStop);
     exec(bitcoinStop, (error, stdout, stderr) => {
       if (error) {

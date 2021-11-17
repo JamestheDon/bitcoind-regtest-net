@@ -1,6 +1,6 @@
 {
   "name": "bitcoind-regtest-net",
-  "version": "0.4",
+  "version": "0.4.0",
   "description": "Create n bitcoind nodes on the regression network (regtest).",
   "main": "index.js",
   "type": "module",
