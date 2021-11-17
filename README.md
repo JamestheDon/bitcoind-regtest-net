@@ -13,5 +13,6 @@ Create n nodes on the Bitcoin Core regtest network.
 - [x] Load wallets.
 - [x] Generate new addresses.
 - []  Generate coins to addresses.
+- []  Single node operations controller.
 - []  Make transactions between nodes. 
 - []  Generate Lightning network regtest nodes.
