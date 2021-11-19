@@ -1,7 +1,7 @@
 import { stat, writeFile, mkdir } from "fs";
 import { homedir, platform } from "os";
 import { spawn, exec } from "child_process";
-import {start} from "./rpc/commands.js"
+import {createWallet, start} from "./rpc/commands.js"
 /**
  *
  * @SPEC create multipule instances of a regtest node.
@@ -131,52 +131,30 @@ for (let i = paths.length; i--; ) {
 if (nodesReady.length > 0) {
   for (let i = nodesReady.length; i--; ) {
     start(db, nodesReady[i], nodesReady[i].key )
-    /**
-     * @refactored ready to delete.
-     */
-    // const start = spawn(
-    //   "bitcoind",
-    //   [
-    //     "-daemon",
-    //     "-conf=" + db +  "/node" + nodesReady[i].key + "/bitcoin.conf",
-    //   ],
-    //   { encoding: "utf-8", stdio: "pipe" }
-    // );
-    // start.stderr.on("data", (data) => {
-    //   console.log("[bitcoind]", data.toString());
-    // });
-
-    // start.stdout.on("data", (data) => {
-    //   //  console.log(`node ready:${nodesReady[i].key}`,data.toString());
-    //   if (data) {
-    //     nodesReady[i].running = true;
-    //   }
-    // });
-
-    // start.on("close", (data) => {
-    //   if (data === 1) {
-    //     console.log("[bitcoind] Running", true);
-    //     nodesReady[i].running = true;
-    //   }
-     
-    //   console.log("node started:", nodesReady[i].running);
-    // });
-  }
+  };
 }
 
 // using setTimeout to "hang" the process allowing for time for start up.
 setTimeout(() => {
   nodeController(nodesReady);
-}, 5000);
+}, 3000);
 
 /**
  *
  * @spec
  *
  */
-
+const nodesActive = []
+const walletActive = async () => {
+  for (let i = nodesReady.length; i--; ) {
+    const wallet =  await createWallet(db, nodesReady[i])
+   nodesActive.push(wallet)
+   console.log('nodes active::', nodesActive)
+      
+     }
+}
 const nodeController = (nodesReady) => {
-  console.log(nodesReady);
+//  console.log(nodesReady);
   process.stdout.write(
     "Create a wallet? : 1 \n Load Wallet. : 2\n Add new addresses? : 3\n Get account details. : 4\n Exit program. : 5 "
   );
@@ -185,40 +163,26 @@ const nodeController = (nodesReady) => {
 
   let buffer = "";
   process.stdin.on("data", (data) => {
-    buffer = data.trim();
+  buffer = data.trim();
     switch (buffer) {
       case "1":
-        for (let i = nodesReady.length; i--; ) {
-          const start = spawn(
-            "bitcoin-cli",
-            [
-              "-regtest",
-              `-rpcport=${nodesReady[i].ports.rpc}`,
-              "-datadir=" + db + "/node" + nodesReady[i].key,
-              "createwallet",
-              "testwallet",
-            ],
-            { encoding: "utf-8", stdio: "pipe" }
-          );
-          start.stderr.on("data", (data) => {
-            console.log("errror:", data.toString());
-          });
-
-          start.stdout.on("data", (data) => {
-            //  console.log(`node ready:${nodesReady[i].key}`,data.toString());
-            if (data) {
-              //   nodesReady[i].wallet = "testwallet";
-              nodesReady[i].wallets.push(data);
-            }
-          });
-
-          start.on("close", (data) => {
-            console.log("Node started, closing processes. ", data);
-            console.log("node started:", nodesReady[i].running);
-          });
-        }
+      walletActive()
+      //   for (let i = nodesReady.length; i--; ) {
+      //  const wallet =  await createWallet(db, nodesReady[i])
+      // nodesActive.push(wallet)
+      // console.log('nodes active::', nodesActive)
+         
+      //   }
+        
+        break;
       case "2":
         for (let i = nodesReady.length; i--; ) {
+          const wallet = {
+            name: "testwallet",
+            node: nodesReady[i].name,
+            warning: "",
+            loaded: true,
+          };
           const start = spawn(
             "bitcoin-cli",
             [
@@ -237,12 +201,7 @@ const nodeController = (nodesReady) => {
 
           start.stdout.on("data", (data) => {
             if (data) {
-              const wallet = {
-                name: "testwallet",
-                node: nodesReady[i].name,
-                warning: "",
-                loaded: true,
-              };
+            
               nodesReady[i].wallets.push(wallet);
               console.log("Wallet loaded:", wallet);
             }
