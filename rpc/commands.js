@@ -109,7 +109,7 @@ export const loadWallet = async (db, node) => {
             if (data) {
               wallet.loaded = true
               node.wallets.push(wallet);
-              console.log("Wallet loaded.");
+              console.log("[wallet] loaded.");
               resolve(node)
             }
           });
@@ -117,20 +117,18 @@ export const loadWallet = async (db, node) => {
           start.on("close", (data) => {
               if (data === 18) {
                   console.log('wallet does not exist')
-                  resolve('new wallet!')
+                  resolve('[wallet] new!')
               }
             if (data === 35 && node.wallets <= 0) {
               wallet.loaded = true
               node.wallets.push(wallet);
-              console.log("err 35. Wallet loaded:", true);
+              console.log("[wallet] already exists:", true);
               resolve(node)
-            } else {
-                console.log('pew pew pew')
-                wallet.loaded = true
-                resolve(node)
-            }
+            } 
         //   console.log('exit code:',data)
          //   console.log(" close. nodes:");
           });
     })
 }
+
+
