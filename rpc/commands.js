@@ -78,10 +78,59 @@ export const createWallet = async (db, node) => {
           
         });
     })
-        
-       
-       
-   
-        
 }
 
+export const loadWallet = async (db, node) => {
+    return new Promise((resolve, reject) => {
+        const wallet = {
+            name: "testwallet",
+            node: node.name,
+            warning: "",
+            loaded: false,
+          };
+          const start = spawn(
+            "bitcoin-cli",
+            [
+              "-regtest",
+              `-rpcport=${node.ports.rpc}`,
+              "-datadir=" + db +  "/node" + node.key,
+              "loadwallet",
+              "testwallet",
+            ],
+            { encoding: "utf-8", stdio: "pipe" }
+          );
+          start.stderr.on("data", (data) => {
+              wallet.warning = data.toString()
+           // console.log('wallet warnings:',wallet.warning);
+             // reject("rejected")
+          });
+
+          start.stdout.on("data", (data) => {
+            if (data) {
+              wallet.loaded = true
+              node.wallets.push(wallet);
+              console.log("Wallet loaded.");
+              resolve(node)
+            }
+          });
+
+          start.on("close", (data) => {
+              if (data === 18) {
+                  console.log('wallet does not exist')
+                  resolve('new wallet!')
+              }
+            if (data === 35 && node.wallets <= 0) {
+              wallet.loaded = true
+              node.wallets.push(wallet);
+              console.log("err 35. Wallet loaded:", true);
+              resolve(node)
+            } else {
+                console.log('pew pew pew')
+                wallet.loaded = true
+                resolve(node)
+            }
+        //   console.log('exit code:',data)
+         //   console.log(" close. nodes:");
+          });
+    })
+}

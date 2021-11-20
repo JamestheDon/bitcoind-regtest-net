@@ -1,7 +1,7 @@
 import { stat, writeFile, mkdir } from "fs";
 import { homedir, platform } from "os";
 import { spawn, exec } from "child_process";
-import {createWallet, start} from "./rpc/commands.js"
+import {createWallet, loadWallet, start} from "./rpc/commands.js"
 /**
  *
  * @SPEC create multipule instances of a regtest node.
@@ -145,18 +145,25 @@ setTimeout(() => {
  *
  */
 const nodesActive = []
-const walletActive = async () => {
+const walletActivate = async () => {
   for (let i = nodesReady.length; i--; ) {
-    const wallet =  await createWallet(db, nodesReady[i])
-   nodesActive.push(wallet)
-   console.log('nodes active::', nodesActive)
-      
-     }
+    const loaded = await loadWallet(db, nodesReady[i]) 
+     if (loaded === 'new wallet!'){
+      const wallet =  await createWallet(db, nodesReady[i])
+      nodesActive.push(wallet) 
+    } else {
+      nodesActive.push(loaded)
+    }
+
+    
+   // nodesActive.push(wallet)
+    console.log('nodes active::', nodesActive)
+  }
 }
 const nodeController = (nodesReady) => {
 //  console.log(nodesReady);
   process.stdout.write(
-    "Create a wallet? : 1 \n Load Wallet. : 2\n Add new addresses? : 3\n Get account details. : 4\n Exit program. : 5 "
+    "1) Activate wallet \n2) Load Wallet.\n Add new addresses? : 3\n Get account details. : 4\n Exit program. : 5 "
   );
   process.stdin.resume();
   process.stdin.setEncoding("utf-8");
@@ -166,92 +173,85 @@ const nodeController = (nodesReady) => {
   buffer = data.trim();
     switch (buffer) {
       case "1":
-      walletActive()
-      //   for (let i = nodesReady.length; i--; ) {
-      //  const wallet =  await createWallet(db, nodesReady[i])
-      // nodesActive.push(wallet)
-      // console.log('nodes active::', nodesActive)
-         
-      //   }
-        
+        walletActivate()
         break;
       case "2":
         for (let i = nodesReady.length; i--; ) {
-          const wallet = {
-            name: "testwallet",
-            node: nodesReady[i].name,
-            warning: "",
-            loaded: true,
-          };
-          const start = spawn(
-            "bitcoin-cli",
-            [
-              "-regtest",
-              `-rpcport=${nodesReady[i].ports.rpc}`,
-              "-datadir=" + db +  "/node" + nodesReady[i].key,
-              "loadwallet",
-              "testwallet",
-            ],
-            { encoding: "utf-8", stdio: "pipe" }
-          );
-          start.stderr.on("data", (data) => {
-            console.log("Load wallet error:", data.toString());
+          // const wallet = {
+          //   name: "testwallet",
+          //   node: nodesReady[i].name,
+          //   warning: "",
+          //   loaded: true,
+          // };
+          // const start = spawn(
+          //   "bitcoin-cli",
+          //   [
+          //     "-regtest",
+          //     `-rpcport=${nodesReady[i].ports.rpc}`,
+          //     "-datadir=" + db +  "/node" + nodesReady[i].key,
+          //     "loadwallet",
+          //     "testwallet",
+          //   ],
+          //   { encoding: "utf-8", stdio: "pipe" }
+          // );
+          // start.stderr.on("data", (data) => {
+          //   console.log("Load wallet error:", data.toString());
           
-          });
+          // });
 
-          start.stdout.on("data", (data) => {
-            if (data) {
+          // start.stdout.on("data", (data) => {
+          //   if (data) {
             
-              nodesReady[i].wallets.push(wallet);
-              console.log("Wallet loaded:", wallet);
-            }
-          });
+          //     nodesReady[i].wallets.push(wallet);
+          //     console.log("Wallet loaded:", wallet);
+          //   }
+          // });
 
-          start.on("close", (data) => {
-            if (data === 35) {
-              nodesReady[i].wallets.push(wallet);
-              console.log("Wallet loaded:", true);
+          // start.on("close", (data) => {
+          //   if (data === 35) {
+          //     nodesReady[i].wallets.push(wallet);
+          //     console.log("Wallet loaded:", true);
               
-            }
+          //   }
            
-            console.log("Wallet loaded:", nodesReady[i].running);
-          });
+          //   console.log("Wallet loaded:", nodesReady[i].running);
+          // });
         }
 
         break;
 
       case "3":
         for (let i = nodesReady.length; i--; ) {
-          const start = spawn(
-            "bitcoin-cli",
-            [
-              "-regtest",
-              `-rpcport=${nodesReady[i].ports.rpc}`,
-              "-datadir=" + db +  "/node" + nodesReady[i].key,
-              "getnewaddress", // add address type.
-            ],
-            { encoding: "utf-8", stdio: "pipe" }
-          );
-          start.stderr.on("data", (data) => {
-            console.log("Gen new address error:", data.toString());
-          });
+          // const start = spawn(
+          //   "bitcoin-cli",
+          //   [
+          //     "-regtest",
+          //     `-rpcport=${nodesReady[i].ports.rpc}`,
+          //     "-datadir=" + db +  "/node" + nodesReady[i].key,
+          //     "getnewaddress", // add address type.
+          //   ],
+          //   { encoding: "utf-8", stdio: "pipe" }
+          // );
+          // start.stderr.on("data", (data) => {
+          //   console.log("Gen new address error:", data.toString());
+          // });
 
-          start.stdout.on("data", (data) => {
-            if (data) {
-              const address = {
-                key: nodesReady[i].key,
-                node: nodesReady[i].name,
-                address: data,
-              };
-              console.log("Address ready:", address);
-              nodesReady[i].address.push(address);
-            }
-          });
+          // start.stdout.on("data", (data) => {
+          //   if (data) {
+          //     const address = {
+          //       key: nodesReady[i].key,
+          //       node: nodesReady[i].name,
+          //       address: data,
+          //     };
+          //     console.log("Address ready:", address);
+          //     nodesReady[i].address.push(address);
+          //   }
+          // });
 
-          start.on("close", (data) => {
-            console.log("Node started, closing processes. ", data);
-            console.log("node started:", nodesReady[i].running);
-          });
+          // start.on("close", (data) => {
+          //   console.log("Node started, closing processes. ", data);
+          //   console.log("node started:", nodesReady[i].running);
+          // });
         }
 
         break;
@@ -311,7 +311,7 @@ process.on("SIGINT", () => {
   // Stop bitcoind
   for (let i = nodesReady.length; i--; ) {
     const bitcoinStop = `bitcoin-cli -rpcport=${nodesReady[i].ports.rpc}  -datadir="${db}/node${nodesReady[i].key}" stop`;
-    console.log("stop commands here:", bitcoinStop);
+  //  console.log("stop commands here:", bitcoinStop);
     exec(bitcoinStop, (error, stdout, stderr) => {
       if (error) {
         console.log("error", error);
