@@ -11,7 +11,9 @@ export const start = (db, node, key) => {
         { encoding: "utf-8", stdio: "pipe" }
       );
       bitcoind.stderr.on("data", (data) => {
-        console.log("[bitcoind] ", data.toString());
+         if (data) {
+            console.log("[bitcoind] running..");
+         }
       });
     
       bitcoind.stdout.on("data", (data) => {
@@ -23,13 +25,12 @@ export const start = (db, node, key) => {
     
       bitcoind.on("close", (data) => {
         if (data === 1) {
-          console.log("[bitcoind] ");
+        // console.log("[bitcoind]");
           node.running = true;
+        } else {
+            console.log('bitcoind starting data', data)
         }
-       console.log('bitcoind starting data', data)
-       // console.log(`[bitcoind] ${node.name} spawned...`);
     });
-
 }
 
 export const createWallet = async (db, node) => {
@@ -162,8 +163,9 @@ export const getWalletInfo = async (db, node) => {
 
           start.stdout.on("data", (data) => {
             if (data) {
-              console.log("[walletinfo] success:", data.toString());
-              node.wallets.push(data.toString())
+            //  console.log("[walletinfo] success:", data.toString());
+              node.wallets.push(JSON.parse(data))   
+              
               resolve(node)
             }
           });

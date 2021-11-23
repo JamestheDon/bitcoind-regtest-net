@@ -26,7 +26,7 @@ const startPort = [8333]; // startPort 8333 is where the port generation starts 
 
 // Add os check to determine where data directories should be created.
 const init = (env, home) => {
-  const pkgName = "ledgerd"; // Directory to build network in.
+  const pkgName = "ledgerd"; // Directory name to build network in.
   if (env === "linux") {
     console.log(env);
     const url = home + linux + pkgName;
@@ -69,9 +69,9 @@ for (let i = paths.length; i--; ) {
   });
 }
 
-if (ports.length && paths.length > 0) {
-  console.log("auth handeling can go here");
-}
+// if (ports.length && paths.length > 0) {
+//   console.log("auth handeling can go here");
+// }
 
 //       **Important in production code:**
 // todo: need auth handeling: ./auth.js
@@ -151,29 +151,25 @@ const walletActivate = async () => {
 
     if (loaded === "new wallet!") {
       const wallet = await createWallet(db, nodesReady[i]);
-      nodesActive.push(wallet);
+    //  nodesActive.push(wallet);
     } 
     
       if (nodesActive.length <= nodes) {
-        console.log('nodesActive length:', nodesActive)
-        nodesActive.push(loaded[0]);
+       // console.log('nodesActive length:', nodesActive)
+     //   nodesActive.push(loaded[0]);
       } 
     
     if (loaded[1] === 'wallet active') {
-      // nodesActive.push(loaded[0]);
-      console.log('wallet active, getinfo ready.')
     const info = await getWalletInfo(db, nodesReady[i]);
-    console.log('info:::', info)
+    nodesActive.push(info)
+   // console.log('info:::', info)
     }
-    // nodesActive.push(wallet)
-   // console.log("nodes active::", wallet);
   }
   console.log('nodessss', nodesActive)
 };
 const nodeController = (nodesReady) => {
-  //  console.log(nodesReady);
   process.stdout.write(
-    "1) Activate wallet \n2) Get wallet info \n3) Add new addresses. : \n4) Exit program. : 5 \n"
+    "1) Activate wallet \n2) Add new addresses. \n3) Add new addresses. : \n4) Exit program. : 5 \n"
   );
   process.stdin.resume();
   process.stdin.setEncoding("utf-8");
