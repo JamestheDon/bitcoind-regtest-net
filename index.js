@@ -1,7 +1,7 @@
 import { stat, writeFile, mkdir } from "fs";
 import { homedir, platform } from "os";
 import { spawn, exec } from "child_process";
-import { createWallet, loadWallet, start } from "./rpc/commands.js";
+import { createWallet, getWalletInfo, loadWallet, start } from "./rpc/commands.js";
 /**
  *
  * @SPEC create multipule instances of a regtest node.
@@ -137,7 +137,7 @@ if (nodesReady.length > 0) {
 // using setTimeout to "hang" the process allowing for time for start up.
 setTimeout(() => {
   nodeController(nodesReady);
-}, 3000);
+}, 2500);
 
 /**
  *
@@ -148,16 +148,22 @@ const nodesActive = [];
 const walletActivate = async () => {
   for (let i = nodesReady.length; i--; ) {
     const loaded = await loadWallet(db, nodesReady[i]);
+
     if (loaded === "new wallet!") {
       const wallet = await createWallet(db, nodesReady[i]);
       nodesActive.push(wallet);
-    } else {
+    } 
+    
       if (nodesActive.length <= nodes) {
-        nodesActive.push(loaded);
-      } else {
-        console.log('double tap!!') 
-      }
-     
+        console.log('nodesActive length:', nodesActive)
+        nodesActive.push(loaded[0]);
+      } 
+    
+    if (loaded[1] === 'wallet active') {
+      // nodesActive.push(loaded[0]);
+      console.log('wallet active, getinfo ready.')
+    const info = await getWalletInfo(db, nodesReady[i]);
+    console.log('info:::', info)
     }
     // nodesActive.push(wallet)
    // console.log("nodes active::", wallet);
@@ -167,7 +173,7 @@ const walletActivate = async () => {
 const nodeController = (nodesReady) => {
   //  console.log(nodesReady);
   process.stdout.write(
-    "1) Activate wallet \n2) Add new addresses.\n3) Get account details. : \n4) Exit program. : 5 "
+    "1) Activate wallet \n2) Get wallet info \n3) Add new addresses. : \n4) Exit program. : 5 \n"
   );
   process.stdin.resume();
   process.stdin.setEncoding("utf-8");
@@ -181,7 +187,7 @@ const nodeController = (nodesReady) => {
         break;
       case "2":
         for (let i = nodesReady.length; i--; ) {
-          //
+           // could be added to walletActivate func?
         };
         break;
       case "3":
